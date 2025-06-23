@@ -1,0 +1,100 @@
+from OPcodefile import *  # type: ignore
+
+def twooprnd(opt, oprnd):
+    dest, srt = oprnd[0], oprnd[1]
+    if opt == 'MOV':
+        f_write.write(MOV[dest][srt])
+        f_write.write('\n')
+    elif opt == 'MVI':
+        f_write.write(MOV[opt][dest])
+        f_write.write('\n')
+    elif opt == 'LXI':
+        f_write.write(LEFT[opt][dest])
+        f_write.write('\n')
+    else:
+        print(opt, 'Operation not valid')
+        print('Program status: Exit')
+        exit(1)
+
+def oneoprnd(opt, oprnd):
+    dest = oprnd[0]
+    if opt in OPST:
+        f_write.write(OPST[opt])
+        f_write.write('\n')
+    elif opt in OPSTR:
+        f_write.write(OPSTR[opt][dest])
+        f_write.write('\n')
+    elif opt in AMOP:
+        f_write.write(AMOP[opt][dest])
+        f_write.write('\n')
+    elif opt[:1] in JMPS:
+        if oprnd[0] in checks:
+            print("Jump statement encountered")
+            print('Enter 1 to continue and 0 to ignore ')
+            if int(input()):
+                f_input.seek(checks[oprnd[0]], 0)
+            else:
+                print('Jump address not found')
+                print('Program status: Exit')
+                exit(1)
+        f_write.write(JMPS[opt[:1]][opt[1:]])
+        f_write.write('\n')
+    elif opt in BIT:
+        f_write.write(BIT[opt][dest])
+        f_write.write('\n')
+    else:
+        print(opt, 'has wrong instructions')
+
+def nooprnd(opt):
+    if opt in ACCOP:
+        f_write.write(ACCOP[opt])
+        f_write.write('\n')
+    elif opt in ICPC:
+        f_write.write(ICPC[opt])
+        f_write.write('\n')
+    else:
+        print(opt, 'Operation not valid!!')
+        print('Program status: Exit')
+        exit(1)
+
+checks, ln = {}, 0
+f_input = open('input.txt', 'r+')
+
+for line in f_input:
+    ln += 1
+    line = line.rstrip()
+    if line[-1] == ':':
+        checks.update({line[:-1]: ln})
+
+f_input.seek(0)
+f_write = open('output.txt', 'a')
+memory = int(input('Enter Index Memory address: '))
+
+for line in f_input:
+    try:
+        opt, oprnd = line.split()
+        oprnd = oprnd.split(',')
+        f_write.write(str(memory))
+        f_write.write('\t\t\t')
+        memory += len(oprnd) + 1
+    except ValueError:
+        line = line.strip()
+        if ':' == line[-1]:
+            checks.update({line[:-1]: ln})
+            continue
+        else:
+            opt, oprnd = line.strip(), ''
+            f_write.write(str(memory))
+            f_write.write('\t\t\t')
+            memory += 1
+
+    if len(oprnd) == 2:
+        twooprnd(opt, oprnd)
+    elif len(oprnd) == 1:
+        oneoprnd(opt, oprnd)
+    elif len(oprnd) == 0:
+        nooprnd(opt)
+
+f_input.close()
+f_write.close()
+
